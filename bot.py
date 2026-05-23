@@ -17,9 +17,11 @@ class VolareBot(commands.Bot):
 
     async def setup_hook(self):
         await self.load_extension("reactions")
+        await self.tree.sync()
 
     async def on_ready(self):
         print(f"已登入：{self.user}（ID：{self.user.id}）")
+        print(f"已同步 {len(self.tree.get_commands())} 個斜線指令")
 
 
 async def main():
