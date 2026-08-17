@@ -1,7 +1,10 @@
 import asyncio
+import os
 import discord
 from discord import app_commands
 from discord.ext import commands
+
+DEFAULT_EMOJI = os.getenv("DEFAULT_EMOJI", "✅")
 
 
 class ReactionsCog(commands.Cog):
@@ -12,12 +15,14 @@ class ReactionsCog(commands.Cog):
     @app_commands.describe(
         message_id="目標訊息的 ID",
         custom_message="附加在 @mention 後的自訂訊息（可選）",
+        emoji=f"要篩選的反應表情符號（可選，預設為{DEFAULT_EMOJI}）",
     )
     async def list_reactions(
         self,
         interaction: discord.Interaction,
         message_id: str,
         custom_message: str = "",
+        emoji: str = DEFAULT_EMOJI,
     ):
         await interaction.response.defer()
 
@@ -34,13 +39,13 @@ class ReactionsCog(commands.Cog):
             return
 
         if not target_msg.reactions:
-            await interaction.followup.send("該訊息沒有任何 ✅ 反應。", ephemeral=True)
+            await interaction.followup.send(f"該訊息沒有任何 {emoji} 反應。", ephemeral=True)
             return
 
         seen = set()
         mentions = []
         for reaction in target_msg.reactions:
-            if str(reaction.emoji) != "✅":
+            if str(reaction.emoji) != emoji:
                 continue
             async for user in reaction.users():
                 if user.bot or user.id in seen:
@@ -49,10 +54,11 @@ class ReactionsCog(commands.Cog):
                 mentions.append(user.mention)
 
         if not mentions:
-            await interaction.followup.send("該訊息沒有任何 ✅ 反應。", ephemeral=True)
+            await interaction.followup.send(f"該訊息沒有任何 {emoji} 反應。", ephemeral=True)
             return
 
-        safe_mentions = discord.AllowedMentions(everyone=False, users=True, roles=False)
+        safe_mentions = discord.AllowedMentions(
+            everyone=False, users=True, roles=False)
         all_mentions = " ".join(mentions)
         message = f"{all_mentions}\n{custom_message}" if custom_message else all_mentions
 
